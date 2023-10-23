@@ -1,0 +1,400 @@
+signIn: async (req, res) => {
+        try {
+            const Email = req.body.Email;
+            const Password = req.body.Password;
+            if (!Email || !Password) {
+                return httpHandler.fail(
+                    res,
+                    {
+                        errMsg: " Please enter complete information",
+                    },
+                    errors.message,
+                );
+            } else {
+                const dataUser = await ServiceAuth.getUser(Email);
+                if (dataUser.length === 0) {
+                    return httpHandler.fail(
+                        res,
+                        {
+                            errMsg: "Your account is not registered",
+                        },
+                        errors.message,
+                    );
+                } else {
+                    const isPasswordValid = await bcrypt.compare(
+                        Password,
+                        dataUser[0].password,
+                    );
+                    if (!isPasswordValid) {
+                        const timeFail = new Date();
+                        const selectChallengers =
+                            await ServiceChallengers.selectChallengers(
+                                dataUser[0].id,
+                            );
+                        if (selectChallengers.length === 0) {
+                            const createOrUpdateChallengers =
+                                await ServiceChallengers.createOrUpdateChallengers(
+                                    dataUser[0].id,
+                                );
+                            if (!createOrUpdateChallengers) {
+                                return httpHandler.unauthorized(res);
+                            } else {
+                                return httpHandler.fail(
+                                    res,
+                                    {
+                                        errMsg: " You entered the wrong password",
+                                        time_fail: formatTime(timeFail),
+                                        number_failed: 1,
+                                    },
+                                    errors.message,
+                                );
+                            }
+                        } else {
+                            const failed = selectChallengers[0].number_failed;
+                            const time = selectChallengers[0].time_fail;
+                            const blockingTime = new Date(
+                                selectChallengers[0].blocking_time,
+                            ).getTime();
+                            const failing = failed + 1;
+                            const currentTime = new Date().getTime();
+                            if (failed >= 9) {
+                                if (blockingTime+300000 <= currentTime) {
+                                    const deleteChallengers =
+                                        await ServiceChallengers.deleteChallengers(
+                                            dataUser[0].id,
+                                        );
+                                    if (!deleteChallengers) {
+                                        return httpHandler.unauthorized(res);
+                                    } else {
+                                        return httpHandler.fail(
+                                            res,
+                                            {
+                                                errMsg:
+                                                    " You entered the wrong password: " +
+                                                    failing,
+                                                time_fail: time,
+                                                number_failed: 10,
+                                            },
+                                            errors.message,
+                                        );
+                                    }
+                                } else {
+                                    // const newTime = formatTime(blockingTime+300000);
+                                    return httpHandler.fail(
+                                        res,
+                                        {
+                                            errMsg: " Please wait 5 minutes because your password has been wrong more than ten times ",
+                                            Waiting_time: formatTime(blockingTime+300000),
+                                        },
+                                        errors.message,
+                                    );
+                                }
+                            } else {
+                                const createOrUpdateChallengers =
+                                    await ServiceChallengers.createOrUpdateChallengers(
+                                        dataUser[0].id,
+                                    );
+                                if (!createOrUpdateChallengers) {
+                                    return httpHandler.unauthorized(res);
+                                } else {
+                                    return httpHandler.fail(
+                                        res,
+                                        {
+                                            errMsg:
+                                                " You entered the wrong password: " +
+                                                failing,
+                                            time_fail: time,
+                                            number_failed: failing,
+                                        },
+                                        errors.message,
+                                    );
+                                }
+                            }
+                        }
+                    } else {
+                        const verifiedAt = new Date();
+                        const dataForToken = {
+                            Id_User: dataUser[0].id,
+                            verified_at: verifiedAt,
+                        };
+                        const refreshTokenLife = 60 * 60 * 24;
+                        const refreshToken = await authMethod.registerToken(
+                            dataForToken,
+                            privateKey,
+                            refreshTokenLife,
+                        );
+                        if (!refreshToken) {
+                            return httpHandler.unauthorized(res);
+                        } else {
+                            const accessTokenLife = 60 * 60 * 12;
+                            const accessToken = await authMethod.registerToken(
+                                dataForToken,
+                                privateKey,
+                                accessTokenLife,
+                            );
+                            if (!accessToken) {
+                                return httpHandler.unauthorized(res);
+                            } else {
+                                const deleteChallengers =
+                                    await ServiceChallengers.deleteChallengers(
+                                        dataUser[0].id,
+                                    );
+                                if (!deleteChallengers) {
+                                    return httpHandler.unauthorized(res);
+                                } else {
+                                    const selectSessions =
+                                        await ServiceSessions.selectSessions(
+                                            dataUser[0].id,
+                                        );
+                                    if (selectSessions.length >= 1) {
+                                        return httpHandler.fail(
+                                            res,
+                                            {
+                                                errMsg: " Logging into another machine!!!",
+                                            },
+                                            errors.message,
+                                        );
+                                    } else {
+                                        res.cookie("token", accessToken, {
+                                            maxAge: 900000,
+                                            httpOnly: true,
+                                        });
+                                        const createOrUpdateSessions =
+                                            await ServiceSessions.createOrUpdateSessions(
+                                                dataUser[0].id,
+                                                refreshToken,
+                                            ); // luu session
+                                        if (!createOrUpdateSessions) {
+                                            return httpHandler.unauthorized(
+                                                res,
+                                            );
+                                        } else {
+                                            return httpHandler.success(res, {
+                                                msg: "Logged in successfully.",
+                                                refreshToken: refreshToken,
+                                                accessToken: accessToken,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            return httpHandler.serverError(res, error.message);
+        }
+    },
+
+    signIn: async (req, res) => {
+        try {
+            const Email = req.body.Email;
+            const Password = req.body.Password;
+            if (!Email || !Password) {
+                return httpHandler.fail(
+                    res,
+                    {
+                        errMsg: " Please enter complete information",
+                    },
+                    errors.message,
+                );
+            } else {
+                const dataUser = await ServiceAuth.getUser(Email);
+                if (dataUser.length === 0) {
+                    return httpHandler.fail(
+                        res,
+                        {
+                            errMsg: "Your account is not registered",
+                        },
+                        errors.message,
+                    );
+                } else {
+                    const selectChallengers =
+                        await ServiceChallengers.selectChallengers(
+                            dataUser[0].id,
+                        );
+                    const timeFail = new Date();
+                    if (selectChallengers.length === 0) {
+                        const createOrUpdateChallengers =
+                            await ServiceChallengers.createOrUpdateChallengers(
+                                dataUser[0].id,
+                            );
+                        if (!createOrUpdateChallengers) {
+                            return httpHandler.unauthorized(res);
+                        } else {
+                            const isPasswordValid = await bcrypt.compare(
+                                Password,
+                                dataUser[0].password,
+                            );
+
+                            if (!isPasswordValid) {
+                                const createOrUpdateChallengers =
+                                    await ServiceChallengers.createOrUpdateChallengers(
+                                        dataUser[0].id,
+                                    );
+                                if (!createOrUpdateChallengers) {
+                                    return httpHandler.unauthorized(res);
+                                } else {
+                                    return httpHandler.fail(
+                                        res,
+                                        {
+                                            errMsg: " You entered the wrong password",
+                                            time_fail: formatTime(timeFail),
+                                            number_failed: 1,
+                                        },
+                                        errors.message,
+                                    );
+                                }
+                            } else {
+                                const verifiedAt = new Date();
+                                const dataForToken = {
+                                    Id_User: dataUser[0].id,
+                                    verified_at: verifiedAt,
+                                };
+                                const refreshTokenLife = 60 * 60 * 24;
+                                const refreshToken =
+                                    await authMethod.registerToken(
+                                        dataForToken,
+                                        privateKey,
+                                        refreshTokenLife,
+                                    );
+                                if (!refreshToken) {
+                                    return httpHandler.unauthorized(res);
+                                } else {
+                                    const accessTokenLife = 60 * 60 * 12;
+                                    const accessToken =
+                                        await authMethod.registerToken(
+                                            dataForToken,
+                                            privateKey,
+                                            accessTokenLife,
+                                        );
+                                    if (!accessToken) {
+                                        return httpHandler.unauthorized(res);
+                                    } else {
+                                        const deleteChallengers =
+                                            await ServiceChallengers.deleteChallengers(
+                                                dataUser[0].id,
+                                            );
+                                        if (!deleteChallengers) {
+                                            return httpHandler.unauthorized(
+                                                res,
+                                            );
+                                        } else {
+                                            const selectSessions =
+                                                await ServiceSessions.selectSessions(
+                                                    dataUser[0].id,
+                                                );
+                                            if (selectSessions.length >= 1) {
+                                                return httpHandler.fail(
+                                                    res,
+                                                    {
+                                                        errMsg: " Logging into another machine!!!",
+                                                    },
+                                                    errors.message,
+                                                );
+                                            } else {
+                                                res.cookie(
+                                                    "token",
+                                                    accessToken,
+                                                    {
+                                                        maxAge: 900000,
+                                                        httpOnly: true,
+                                                    },
+                                                );
+                                                const createOrUpdateSessions =
+                                                    await ServiceSessions.createOrUpdateSessions(
+                                                        dataUser[0].id,
+                                                        refreshToken,
+                                                    ); // luu session
+                                                if (!createOrUpdateSessions) {
+                                                    return httpHandler.unauthorized(
+                                                        res,
+                                                    );
+                                                } else {
+                                                    return httpHandler.success(
+                                                        res,
+                                                        {
+                                                            msg: "Logged in successfully.",
+                                                            refreshToken:
+                                                                refreshToken,
+                                                            accessToken:
+                                                                accessToken,
+                                                        },
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        const failed = selectChallengers[0].number_failed;
+                        const time = selectChallengers[0].time_fail;
+                        const blockingTime = new Date(
+                            selectChallengers[0].blocking_time,
+                        ).getTime();
+                        const currentTime = new Date().getTime();
+                        if (failed >= 10) {
+                            if (blockingTime + 300000 <= currentTime) {
+                                const deleteChallengers =
+                                    await ServiceChallengers.deleteChallengers(
+                                        dataUser[0].id,
+                                    );
+                                if (!deleteChallengers) {
+                                    return httpHandler.unauthorized(res);
+                                } else {
+                                    return httpHandler.fail(
+                                        res,
+                                        {
+                                            errMsg:
+                                                " You entered the wrong password: " +
+                                                failed,
+                                            time_fail: time,
+                                            number_failed: 10,
+                                        },
+                                        errors.message,
+                                    );
+                                }
+                            } else {
+                                // const newTime = formatTime(blockingTime+300000);
+                                return httpHandler.fail(
+                                    res,
+                                    {
+                                        errMsg: " Please wait 5 minutes because your password has been wrong more than ten times ",
+                                        WaitingTime: formatTime(
+                                            blockingTime + 300000,
+                                        ),
+                                    },
+                                    errors.message,
+                                );
+                            }
+                        } else {
+                            const createOrUpdateChallengers =
+                                await ServiceChallengers.createOrUpdateChallengers(
+                                    dataUser[0].id,
+                                );
+                            if (!createOrUpdateChallengers) {
+                                return httpHandler.unauthorized(res);
+                            } else {
+                                return httpHandler.fail(
+                                    res,
+                                    {
+                                        errMsg:
+                                            " You entered the wrong password: " +
+                                            failed,
+                                        time_fail: time,
+                                        number_failed: failed,
+                                    },
+                                    errors.message,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            return httpHandler.serverError(res, error.message);
+        }
+    },

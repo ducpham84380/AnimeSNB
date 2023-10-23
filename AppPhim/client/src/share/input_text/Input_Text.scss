@@ -1,0 +1,35 @@
+.wrapper-input{
+    margin-top: 5px;
+}
+
+.wrapper-input label {
+    position: relative;
+}
+
+.wrapper-input label .input {
+    width: 100%;
+    padding: 10px 10px 20px 10px;
+    outline: 0;
+    border: 1px solid rgba(105, 105, 105, 0.397);
+    border-radius: 10px;
+    margin: 15px 0 0 0;
+}
+
+.wrapper-input label .input+span {
+    position: absolute;
+    left: 15px;
+    top: 5px;
+    color: grey;
+    font-size: 1.2em;
+    cursor: text;
+    transition: 0.3s ease;
+}
+
+
+.wrapper-input label .input:focus+span,
+.wrapper-input label .input:valid+span {
+    top: -30px;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: green;
+}

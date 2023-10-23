@@ -1,0 +1,110 @@
+.header_account {
+    display: flex;
+    align-items: center;
+}
+
+.header_account_img {
+    width: auto;
+    height: 40px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-top-right-radius: 5px;
+}
+
+.header_account_login {
+    width: auto;
+    height: 40px;
+    margin-left: 10px;
+    margin-right: 10px;
+    align-items: center;
+}
+
+.box_account {
+    display: flex;
+    width: auto;
+    background-color: transparent;
+    padding-right: 10px;
+    height: 100%;
+}
+
+.box_span{
+    height: 40px;
+    min-width: 160px;
+}
+
+.box_img {
+    width: 40px;
+    height: 100%;
+}
+
+.box_account span {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: 10px;
+    color: black;
+    background: none;
+}
+
+.img_user {
+    width: 40px;
+    height: auto;
+}
+
+.login_btn {
+    color: white;
+    text-align: center;
+    height: 40px;
+    background: none;
+    opacity: .5;
+    transition: opacity .4s ease-in-out;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.login_btn:hover {
+    opacity: 1;
+}
+
+.menu_user {
+    position: absolute;
+    background: none;
+    display: none;
+    margin-left: 38.5px;
+}
+
+.menu_user button {
+    display: block;
+    width: 100% !important;
+    border: none;
+    background-color: transparent;
+    font-size: 15px;
+    text-align: end;
+    cursor: pointer;
+    color: black;
+    font-weight: 700;
+    padding: 3px 22px 3px 10px;
+}
+
+.menu_user button:hover {
+    color: #757878;
+    opacity: 1;
+}
+
+.header_account_img:hover .menu_user {
+    display: block;
+    border-bottom-left-radius:5px ;
+    border-bottom-right-radius: 5px;
+    border: 2px solid rgb(91, 107, 255);
+}
+
+
+.header_account_img:hover {
+    border: 2px solid rgb(91, 107, 255);
+}
+
+
+.menu_user .logout_btn {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}

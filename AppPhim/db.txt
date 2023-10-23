@@ -1,0 +1,81 @@
+-- Tạo Cơ sở dữ liệu
+CREATE DATABASE UserFlimDB;
+CREATE DATABASE MovieFlimDB;
+
+-- Kết nối vào Cơ sở dữ liệu
+\c movie_database;
+
+-- Tạo bảng Users
+CREATE TABLE Users (
+    Id serial PRIMARY KEY,
+    Full_Name varchar(40) NOT NULL,
+    Email varchar(100) NOT NULL UNIQUE,
+    Image text,
+    Is_Admin boolean,
+    Like_Movies double precision[],
+    Password varchar(64) NOT NULL
+);
+
+-- Tạo bảng Sessions
+CREATE TABLE Sessions (
+    Id_Session serial PRIMARY KEY,
+    Id_User integer REFERENCES Users(Id),
+    Signed_At timestamptz,
+    Verified_At timestamptz,
+    Token text
+);
+
+-- Tạo bảng Challengers
+CREATE TABLE Challengers (
+    Id_Challengers serial PRIMARY KEY,
+    Id_User integer REFERENCES Users(Id),
+    Failed integer CHECK (Failed >= 1),
+    Last_Failed_At timestamptz
+);
+
+
+
+CREATE TABLE Media (
+    Id_Media serial PRIMARY KEY,
+    Title varchar(20) NOT NULL
+);
+
+-- Tạo bảng Category
+CREATE TABLE Category (
+    Id_Category serial PRIMARY KEY,
+		Id_Media  integer REFERENCES Media( Id_Media ),
+    Name_Category varchar(100) NOT NULL
+);
+
+-- Tạo bảng Movies
+CREATE TABLE Movies (
+    Id_Movies serial PRIMARY KEY,
+    Title text,
+    Title_Image text,
+    Image text,
+    Language varchar(40),
+    Year timestamptz,
+    Time varchar(20),
+    Rate double precision[],
+    Reviews text,
+    Views integer
+);
+
+CREATE TABLE MovieCategory (
+    Id_Movies integer REFERENCES Movies(Id_Movies),
+    Id_Category integer REFERENCES Category(Id_Category),
+    PRIMARY KEY (Id_Movies, Id_Category)
+);
+
+ALTER TABLE MovieCategory
+ADD CONSTRAINT FK_MovieCategory_Movies FOREIGN KEY (Id_Movies) REFERENCES Movies(Id_Movies);
+
+-- Tạo bảng Episodes
+CREATE TABLE Episodes (
+    Id_Episodes serial PRIMARY KEY,
+    Id_Movies integer REFERENCES Movies(Id_Movies),
+    Episodes_Number integer,
+    Release_Date timestamptz,
+    Is_Show boolean,
+    Video text
+);
